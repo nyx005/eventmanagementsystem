@@ -3,6 +3,7 @@ import Registration from "../models/Registration.js";
 
 const isOwner = (event, user) =>
   event.createdBy.toString() === user._id.toString() || user.role === "admin";
+
 export const getEvents = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
@@ -10,7 +11,6 @@ export const getEvents = async (req, res) => {
     const filter = {};
     const { category } = req.query;
     if (category && category !== "All") filter.category = category;
-    // keep only letters, numbers and spaces so search text can never act as a regex
     const search = (req.query.search || "")
       .replace(/[^a-zA-Z0-9 ]/g, "")
       .trim();
@@ -25,6 +25,7 @@ export const getEvents = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 export const getMyEvents = async (req, res) => {
   try {
     const events = await Event.find({ createdBy: req.user._id }).sort({
@@ -36,35 +37,43 @@ export const getMyEvents = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 export const getEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) return res.status(404).json({ message: "Drive not found" });
     res.json(event);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
+
 export const createEvent = async (req, res) => {
   try {
     const {
       title,
+      organization,
       description,
       date,
       time,
       location,
       category,
       capacity,
+      whatToBring,
+      experience,
       image,
     } = req.body;
     const event = await Event.create({
       title,
+      organization,
       description,
       date,
       time,
       location,
       category,
       capacity,
+      whatToBring,
+      experience: experience || "None",
       image,
       createdBy: req.user._id,
     });
@@ -73,39 +82,45 @@ export const createEvent = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 export const updateEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) return res.status(404).json({ message: "Drive not found" });
     if (!isOwner(event, req.user)) {
       return res
         .status(403)
-        .json({ message: "You can only edit your own events" });
+        .json({ message: "You can only edit your own drives" });
     }
     const {
       title,
+      organization,
       description,
       date,
       time,
       location,
       category,
       capacity,
+      whatToBring,
+      experience,
       image,
     } = req.body;
     if (capacity < event.registered) {
       return res.status(400).json({
-        message: `Capacity cannot be lower than the ${event.registered} 
-people already registered`,
+        message: `Volunteers needed cannot be lower than the ${event.registered} volunteers already signed up`,
       });
     }
     Object.assign(event, {
       title,
+      organization,
       description: description ?? "",
       date,
       time,
       location,
       category,
       capacity,
+      whatToBring: whatToBring ?? "",
+      experience: experience || "None",
       image,
     });
     await event.save();
@@ -114,18 +129,19 @@ people already registered`,
     res.status(400).json({ message: error.message });
   }
 };
+
 export const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) return res.status(404).json({ message: "Drive not found" });
     if (!isOwner(event, req.user)) {
       return res
         .status(403)
-        .json({ message: "You can only delete your own events" });
+        .json({ message: "You can only delete your own drives" });
     }
     await Registration.deleteMany({ event: event._id });
     await event.deleteOne();
-    res.json({ message: "Event deleted" });
+    res.json({ message: "Drive deleted" });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

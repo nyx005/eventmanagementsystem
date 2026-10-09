@@ -15,9 +15,15 @@ import {
 } from "../controllers/registrationController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
+
 const router = Router();
+
 const eventRules = [
   body("title").trim().notEmpty().withMessage("Title is required"),
+  body("organization")
+    .trim()
+    .notEmpty()
+    .withMessage("Organization is required"),
   body("date")
     .matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)
     .withMessage("Date must be YYYY-MM-DD"),
@@ -25,9 +31,16 @@ const eventRules = [
     .matches(/^[0-9]{2}:[0-9]{2}$/)
     .withMessage("Time must be HH:MM"),
   body("location").trim().notEmpty().withMessage("Location is required"),
-  body("capacity").isInt({ min: 1 }).withMessage("Capacity must be at least 1"),
+  body("capacity")
+    .isInt({ min: 1 })
+    .withMessage("Volunteers needed must be at least 1"),
+  body("experience")
+    .optional({ values: "falsy" })
+    .isIn(["None", "Beginner", "Experienced"])
+    .withMessage("Experience must be None, Beginner or Experienced"),
   body("image").notEmpty().withMessage("Image is required"),
 ];
+
 router.get("/mine", protect, getMyEvents);
 router
   .route("/")
@@ -43,5 +56,5 @@ router
   .get(protect, getEventRegistrations)
   .post(protect, registerForEvent)
   .delete(protect, cancelRegistration);
-  
+
 export default router;

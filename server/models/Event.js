@@ -1,9 +1,15 @@
 import mongoose from "mongoose";
+
 const eventSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, "Event title is required"],
+      required: [true, "Drive title is required"],
+      trim: true,
+    },
+    organization: {
+      type: String,
+      required: [true, "Organization is required"],
       trim: true,
     },
     description: { type: String, default: "", trim: true },
@@ -24,15 +30,29 @@ const eventSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ["Conference", "Workshop", "Concert", "Sports", "Social", "Other"],
+      enum: [
+        "Shelter Care",
+        "Adoption Drive",
+        "Feeding Drive",
+        "Vaccination",
+        "Rescue",
+        "Fundraising",
+        "Other",
+      ],
       default: "Other",
     },
     capacity: {
       type: Number,
-      required: [true, "Capacity is required"],
-      min: [1, "Capacity must be at least 1"],
+      required: [true, "Volunteers needed is required"],
+      min: [1, "Volunteers needed must be at least 1"],
     },
     registered: { type: Number, default: 0, min: 0 },
+    whatToBring: { type: String, default: "", trim: true },
+    experience: {
+      type: String,
+      enum: ["None", "Beginner", "Experienced"],
+      default: "None",
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -42,4 +62,5 @@ const eventSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
 export default mongoose.model("Event", eventSchema);

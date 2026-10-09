@@ -1,8 +1,8 @@
 import Event from "../models/Event.js";
 import Registration from "../models/Registration.js";
+
 export const registerForEvent = async (req, res) => {
   try {
-    // Reserve a seat only if registered < capacity (atomic)
     const event = await Event.findOneAndUpdate(
       { _id: req.params.id, $expr: { $lt: ["$registered", "$capacity"] } },
       { $inc: { registered: 1 } },
@@ -11,8 +11,8 @@ export const registerForEvent = async (req, res) => {
     if (!event) {
       const exists = await Event.exists({ _id: req.params.id });
       return exists
-        ? res.status(409).json({ message: "This event is fully booked" })
-        : res.status(404).json({ message: "Event not found" });
+        ? res.status(409).json({ message: "This drive is full" })
+        : res.status(404).json({ message: "Drive not found" });
     }
     try {
       await Registration.create({ event: event._id, user: req.user._id });
@@ -21,7 +21,7 @@ export const registerForEvent = async (req, res) => {
       await Event.findByIdAndUpdate(event._id, { $inc: { registered: -1 } });
       const message =
         error.code === 11000
-          ? "You are already registered for this event"
+          ? "You already joined this drive"
           : error.message;
       res.status(400).json({ message });
     }
@@ -29,6 +29,7 @@ export const registerForEvent = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 export const cancelRegistration = async (req, res) => {
   try {
     const reg = await Registration.findOneAndDelete({
@@ -38,7 +39,7 @@ export const cancelRegistration = async (req, res) => {
     if (!reg)
       return res
         .status(404)
-        .json({ message: "You are not registered for this event" });
+        .json({ message: "You have not joined this drive" });
     const event = await Event.findByIdAndUpdate(
       req.params.id,
       { $inc: { registered: -1 } },
@@ -49,6 +50,7 @@ export const cancelRegistration = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 export const getMyRegistrations = async (req, res) => {
   try {
     const list = await Registration.find({ user: req.user._id })
@@ -59,17 +61,18 @@ export const getMyRegistrations = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 export const getEventRegistrations = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) return res.status(404).json({ message: "Drive not found" });
     if (
       event.createdBy.toString() !== req.user._id.toString() &&
       req.user.role !== "admin"
     ) {
       return res
         .status(403)
-        .json({ message: "Only the organizer can see attendees" });
+        .json({ message: "Only the organizer can see volunteers" });
     }
     const list = await Registration.find({ event: event._id })
       .populate("user", "name email")
