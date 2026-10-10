@@ -23,8 +23,7 @@ app.use(
 app.use(express.json({ limit: "5mb" }));
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 50 });
 app.get("/", (req, res) => {
-  res.json({ message: "EventHub API is running!" });
-});
+   res.json({ message: "PawHelp API is running!" });});
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/registrations", registrationRoutes);
